@@ -24,7 +24,47 @@ def initial_condition(x):
 def conserved_to_primitive(U):
     rho = U[0]
     u = U[1] / rho
-    p = (gamma - 1) * (U[2] - 0.5 * rho * u**2)
+    p = (gamma - 1) * (U[2] - 0.5 * rho * u**2) # 利用理想气体状态方程
     return rho, u, p
 
+# %% 三阶Runge-Kutta时间推进
+
+def rk3_step(U, dt, f):
+    k1 = f(U)                           
+    k2 = f(U + dt * k1)                
+    k3 = f(U + dt * (0.25*k1 + 0.25*k2))
+    U_new = U + dt * (1/6*k1 + 1/6*k2 + 2/3*k3)  
+    return U_new
+
+# %% Roe通量计算
+
+def flux_roe(UL, UR):
+    
+    # 左右原始变量
+    rhoL, uL, pL = conserved_to_primitive(UL)   # 左常数状态
+    rhoR, uR, pR = conserved_to_primitive(UR)   # 右常数状态
+    hL = (gamma/(gamma-1)) * pL/rhoL + 0.5*uL**2  # 左焓
+    hR = (gamma/(gamma-1)) * pR/rhoR + 0.5*uR**2  # 右焓
+    
+    sqrt_rhoL = np.sqrt(rhoL)
+    sqrt_rhoR = np.sqrt(rhoR)
+    
+    # Roe平均
+    u_roe = (sqrt_rhoL * uL + sqrt_rhoR * uR) / (sqrt_rhoL + sqrt_rhoR) # 速度
+    h_roe = (sqrt_rhoL * hL + sqrt_rhoR * hR) / (sqrt_rhoL + sqrt_rhoR) # 焓
+    rho_roe = (0.5 * (sqrt_rhoL + sqrt_rhoR))**2                        # 密度
+
+    
+    
+
 # %%
+
+x = np.linspace(xmin, xmax, nx)
+dx = (xmax - xmin)/(nx-1)
+rho, u, p = initial_condition(x)
+U = np.array([rho, rho*u, p/(gamma-1) + 0.5*rho*u**2])  # 形状 (3, nx)
+
+
+
+
+
