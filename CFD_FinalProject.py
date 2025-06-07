@@ -53,6 +53,14 @@ def flux_roe(UL, UR):
     u_roe = (sqrt_rhoL * uL + sqrt_rhoR * uR) / (sqrt_rhoL + sqrt_rhoR) # 速度
     h_roe = (sqrt_rhoL * hL + sqrt_rhoR * hR) / (sqrt_rhoL + sqrt_rhoR) # 焓
     rho_roe = (0.5 * (sqrt_rhoL + sqrt_rhoR))**2                        # 密度
+    a_roe = np.sqrt((gamma-1)*(h_roe - 0.5*u_roe**2))                   # 声速（通过焓推导）
+    
+    # 特征速度（通过解Jacobi矩阵得到）
+    lambda1 = u_roe - a_roe
+    lambda2 = u_roe
+    lambda3 = u_roe + a_roe
+    
+    # 熵修正
 
     
     
