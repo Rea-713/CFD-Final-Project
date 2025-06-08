@@ -61,18 +61,33 @@ def flux_roe(UL, UR):
     lambda3 = u_roe + a_roe
     
     # 熵修正
-
+    eps = 1e-6
+    lambda1 = np.where(np.abs(lambda1) < eps, (lambda1**2 + eps**2)/(2*eps), lambda1)
+    lambda3 = np.where(np.abs(lambda3) < eps, (lambda3**2 + eps**2)/(2*eps), lambda3)
     
-    
+    # 通量差分裂
+    delta_U = UR - UL
+    F_L = np.array([rhoL*uL, rhoL*uL**2 + pL, uL*(UL[2] + pL)])
+    F_R = np.array([rhoR*uR, rhoR*uR**2 + pR, uR*(UR[2] + pR)])
 
-# %%
+
+# %% 
 
 x = np.linspace(xmin, xmax, nx)
 dx = (xmax - xmin)/(nx-1)
 rho, u, p = initial_condition(x)
 U = np.array([rho, rho*u, p/(gamma-1) + 0.5*rho*u**2])  # 形状 (3, nx)
 
+t = 0
 
+# %% 绘图
+
+plt.figure(figsize=(18,10))
+
+
+plt.legend()
+plt.tight_layout()
+plt.show()
 
 
 
