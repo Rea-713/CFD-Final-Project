@@ -71,6 +71,17 @@ def flux_roe(UL, UR):
     F_R = np.array([rhoR*uR, rhoR*uR**2 + pR, uR*(UR[2] + pR)])
 
 
+
+
+# %% WENO
+
+def weno(v):
+    n = len(v)
+    vL = np.zeros_like(v)
+    vR = np.zeros_like(v)
+
+
+
 # %% 
 
 x = np.linspace(xmin, xmax, nx)
