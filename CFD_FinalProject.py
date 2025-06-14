@@ -51,26 +51,68 @@ def flux_roe(UL, UR):
     
     # Roe平均
     u_roe = (sqrt_rhoL * uL + sqrt_rhoR * uR) / (sqrt_rhoL + sqrt_rhoR) # 速度
-    h_roe = (sqrt_rhoL * hL + sqrt_rhoR * hR) / (sqrt_rhoL + sqrt_rhoR) # 焓
+    H_roe = (sqrt_rhoL * hL + sqrt_rhoR * hR) / (sqrt_rhoL + sqrt_rhoR) # 焓
     rho_roe = (0.5 * (sqrt_rhoL + sqrt_rhoR))**2                        # 密度
-    a_roe = np.sqrt((gamma-1)*(h_roe - 0.5*u_roe**2))                   # 声速（通过焓推导）
+    a_roe = np.sqrt((gamma-1)*(H_roe - 0.5*u_roe**2))                   # 声速（通过焓推导）
     
     # 特征速度（通过解Jacobi矩阵得到）
-    lambda1 = u_roe - a_roe
-    lambda2 = u_roe
-    lambda3 = u_roe + a_roe
+    lambda1 = u_roe - a_roe                                             # 左行声波
+    lambda2 = u_roe                                                     # 熵波
+    lambda3 = u_roe + a_roe                                             # 右行声波
     
     # 熵修正
     eps = 1e-6
     lambda1 = np.where(np.abs(lambda1) < eps, (lambda1**2 + eps**2)/(2*eps), lambda1)
     lambda3 = np.where(np.abs(lambda3) < eps, (lambda3**2 + eps**2)/(2*eps), lambda3)
     
+    lambda_abs = np.array([np.abs(lambda1), np.abs(lambda2), np.abs(lambda3)])  # 特征值绝对值向量
+    
     # 通量差分裂
     delta_U = UR - UL
     F_L = np.array([rhoL*uL, rhoL*uL**2 + pL, uL*(UL[2] + pL)])
     F_R = np.array([rhoR*uR, rhoR*uR**2 + pR, uR*(UR[2] + pR)])
 
-
+    # 右特征向量矩阵 R (列向量)
+    R = np.zeros((3, 3))
+    R[0, :] = [1, 1, 1]                                                        # 第一行: 密度分量
+    R[1, :] = [u_roe - a_roe, u_roe, u_roe + a_roe]                            # 第二行: 速度分量
+    R[2, :] = [H_roe - u_roe*a_roe, 0.5*u_roe**2, H_roe + u_roe*a_roe]         # 第三行: 能量分量
+    
+    # 左特征向量矩阵 L (行向量) = R^{-1}
+    b1 = 0.5 * (gamma - 1) * u_roe**2 / a_roe**2
+    b2 = (gamma - 1) / a_roe**2
+    
+    L = np.zeros((3, 3))
+    L[0, :] = [0.5*(b1 + u_roe/a_roe), -0.5*(b2*u_roe + 1/a_roe), 0.5*b2]
+    L[1, :] = [1 - b1, b2*u_roe, -b2]
+    L[2, :] = [0.5*(b1 - u_roe/a_roe), -0.5*(b2*u_roe - 1/a_roe), 0.5*b2]
+    
+    delta_U = UR - UL                                                          # 守恒变量差
+    
+    # 波强度 α = L · ΔU
+    alpha = L @ delta_U
+    
+    # 耗散项计算： |Λ|α
+    abs_lambda_alpha = lambda_abs * alpha
+    
+    # 耗散向量 = R(|Λ|α)
+    diss_vector = R @ abs_lambda_alpha
+    
+    # 左右物理通量
+    F_L = np.array([
+        rhoL * uL, 
+        rhoL * uL**2 + pL, 
+        uL * (UL[2] + pL)])
+    
+    F_R = np.array([
+        rhoR * uR, 
+        rhoR * uR**2 + pR, 
+        uR * (UR[2] + pR)])
+    
+    # Roe 通量公式
+    F_roe = 0.5 * (F_L + F_R) - 0.5 * diss_vector
+    
+    return F_roe
 
 
 # %% WENO
