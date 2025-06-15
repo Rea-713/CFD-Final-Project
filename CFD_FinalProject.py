@@ -117,11 +117,59 @@ def flux_roe(UL, UR):
 
 # %% WENO
 
-def weno(v):
+def weno(v): # 五阶
     n = len(v)
     vL = np.zeros_like(v)
     vR = np.zeros_like(v)
+    epsilon = 1e-6
 
+    for i in range(2, n-2):
+        # 右重构
+        v0 = v[i-2]
+        v1 = v[i-1]
+        v2 = v[i]
+        v3 = v[i+1]
+        v4 = v[i+2]
+
+        # 光滑指示器（利用公式）
+        IS0 = 13/12*(v0 - 2*v1 + v2)**2 + 1/4*(v0 - 4*v1 + 3*v2)**2
+        IS1 = 13/12*(v1 - 2*v2 + v3)**2 + 1/4*(v1 - v3)**2
+        IS2 = 13/12*(v2 - 2*v3 + v4)**2 + 1/4*(3*v2 - 4*v3 + v4)**2
+
+        # 权重（泰勒展开）
+        alpha0 = 0.1 / (IS0 + epsilon)**2
+        alpha1 = 0.6 / (IS1 + epsilon)**2
+        alpha2 = 0.3 / (IS2 + epsilon)**2
+        sum_alpha = alpha0 + alpha1 + alpha2
+        w0 = alpha0 / sum_alpha
+        w1 = alpha1 / sum_alpha
+        w2 = alpha2 / sum_alpha
+
+        # 重构右界面值
+        vR[i] = w0*( (2*v0 - 7*v1 + 11*v2)/6 ) + w1*( (-v1 +5*v2 +2*v3)/6 ) + w2*( (2*v2 +5*v3 -v4)/6 )
+
+        # 左重构（对称处理）
+        v0 = v[i+2]
+        v1 = v[i+1]
+        v2 = v[i]
+        v3 = v[i-1]
+        v4 = v[i-2]
+
+        IS0 = 13/12*(v0 - 2*v1 + v2)**2 + 1/4*(v0 - 4*v1 +3*v2)**2
+        IS1 = 13/12*(v1 -2*v2 +v3)**2 +1/4*(v1 -v3)**2
+        IS2 = 13/12*(v2 -2*v3 +v4)**2 +1/4*(3*v2 -4*v3 +v4)**2
+
+        alpha0 = 0.1/(IS0 + epsilon)**2
+        alpha1 = 0.6/(IS1 + epsilon)**2
+        alpha2 = 0.3/(IS2 + epsilon)**2
+        sum_alpha = alpha0 + alpha1 + alpha2
+        w0 = alpha0 / sum_alpha
+        w1 = alpha1 / sum_alpha
+        w2 = alpha2 / sum_alpha
+
+        vL[i] = w0*( (2*v0 -7*v1 +11*v2)/6 ) + w1*( (-v1 +5*v2 +2*v3)/6 ) + w2*( (2*v2 +5*v3 -v4)/6 )
+
+    return vL, vR
 
 
 # %% 
