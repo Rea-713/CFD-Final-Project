@@ -171,6 +171,15 @@ def weno(v): # 五阶
 
     return vL, vR
 
+# %% Sod精确解（Riemann求解器）
+
+def sod_exact(x, t):
+    # 初始左右状态
+    rhoL, uL, pL = 1.0, 0.0, 1.0
+    rhoR, uR, pR = 0.125, 0.0, 0.1
+    gamma = 1.4
+
+
 
 # %% 
 
